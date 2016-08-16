@@ -5,6 +5,8 @@ version := "1.94"
 scalaVersion := "2.10.5"
 
 libraryDependencies += "org.apache.spark" %% "spark-core" % "1.6.2"
+libraryDependencies += "org.apache.spark" %% "spark-mllib" % "1.6.2"
+libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.6.2"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % "test"
 
 resolvers += "Akka Repository" at "http://repo.akka.io/releases/"
