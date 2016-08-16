@@ -1,6 +1,5 @@
 package tw.edu.ntu.csie.liblinear
 
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.Vector
 
@@ -32,8 +31,8 @@ class TronLR extends TronFunction {
       for (feature <- p.x) {
         z += feature.value * w(feature.index)
       }
-      var yz = p.y * z
-      var enyz = exp(-yz)
+      val yz = p.y * z
+      val enyz = exp(-yz)
       if (yz >= 0) {
         f_obj += C * math.log(1 + enyz)
       }
@@ -47,7 +46,7 @@ class TronLR extends TronFunction {
   override def gradient(dataPoints: RDD[DataPoint], w: Vector, C: Double): Vector = {
     val n = w.length
     val g = dataPoints.mapPartitions(blocks => {
-      var grad = Array.fill(n)(0.0)
+      val grad = Array.fill(n)(0.0)
       for (p <- blocks) {
         var z = 0.0
         for (feature <- p.x) {
@@ -66,7 +65,7 @@ class TronLR extends TronFunction {
   override def hessianVector(dataPoints: RDD[DataPoint], w: Vector, C: Double, s: Vector): Vector = {
     val n = w.length
     val Hs = dataPoints.mapPartitions(blocks => {
-      var blockHs = Array.fill(n)(0.0)
+      val blockHs = Array.fill(n)(0.0)
       for (p <- blocks) {
         var z = 0.0
         var wa = 0.0
@@ -102,7 +101,7 @@ class TronL2SVM extends TronFunction {
       }
       val d = 1 - p.y * z
       if (d > 0) {
-        f_obj += C * d * d;
+        f_obj += C * d * d
       }
     })
     f_obj.value + (0.5 * w dot w)
@@ -111,7 +110,7 @@ class TronL2SVM extends TronFunction {
   override def gradient(dataPoints: RDD[DataPoint], w: Vector, C: Double): Vector = {
     val n = w.length
     val g = dataPoints.mapPartitions(blocks => {
-      var grad = Array.fill(n)(0.0)
+      val grad = Array.fill(n)(0.0)
       for (p <- blocks) {
         var z = 0.0
         for (feature <- p.x) {
@@ -133,7 +132,7 @@ class TronL2SVM extends TronFunction {
   override def hessianVector(dataPoints: RDD[DataPoint], w: Vector, C: Double, s: Vector): Vector = {
     val n = w.length
     val Hs = dataPoints.mapPartitions(blocks => {
-      var blockHs = Array.fill(n)(0.0)
+      val blockHs = Array.fill(n)(0.0)
       for (p <- blocks) {
         var z = 0.0
         for (feature <- p.x) {
@@ -179,7 +178,7 @@ class Tron(val function: TronFunction) {
     var (search, iter) = (1, 1)
     var w = Vector.zeros(prob.n)
     var w_new = Vector.zeros(prob.n)
-    var dataPoints = prob.dataPoints
+    val dataPoints = prob.dataPoints
 
     /* Function Value*/
     f = function.functionValue(dataPoints, w, param.C)
@@ -195,7 +194,7 @@ class Tron(val function: TronFunction) {
 
     breakable {
       while (iter <= ITERATIONS && search == 1) {
-        var (cgIter, s, r) = trcg(dataPoints, param.C, delta, w, g)
+        val (cgIter, s, r) = trcg(dataPoints, param.C, delta, w, g)
         w_new = w + s
         gs = g dot s
         prered = -0.5 * (gs - (s dot r))
@@ -264,9 +263,7 @@ class Tron(val function: TronFunction) {
     w
   }
 
-  private def dnrm2_(v: Vector): Double = {
-    return math.sqrt(v dot v)
-  }
+  private def dnrm2_(v: Vector): Double = math.sqrt(v dot v)
 
   private def trcg(dataPoints: RDD[DataPoint], C: Double, delta: Double, w: Vector, g: Vector): (Int, Vector, Vector) = {
     val n = w.length
@@ -287,7 +284,7 @@ class Tron(val function: TronFunction) {
         cgIter += 1
 
         /* hessianVector */
-        var Hd = function.hessianVector(dataPoints, w, C, d)
+        val Hd = function.hessianVector(dataPoints, w, C, d)
         var alpha = rTr / (d dot Hd)
         s += alpha * d
         if (dnrm2_(s) > delta) {
@@ -310,7 +307,7 @@ class Tron(val function: TronFunction) {
           r += alpha * Hd
           break()
         }
-        alpha = -alpha;
+        alpha = -alpha
         r += alpha * Hd
         rnewTrnew = r dot r
         beta = rnewTrnew / rTr

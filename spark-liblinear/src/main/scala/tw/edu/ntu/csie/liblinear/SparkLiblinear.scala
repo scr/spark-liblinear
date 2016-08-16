@@ -25,33 +25,31 @@ object SparkLiblinear {
     * @return a model
     */
   def train(data: RDD[DataPoint], options: String): Model = {
-    var param = new Parameter()
+    val param = new Parameter()
     val prob = new Problem()
-    var model: Model = null
 
     /* Parse options */
-    var argv = options.trim.split("[ \t]+")
+    val argv = options.trim.split("[ \t]+")
     breakable {
       var i = 0
       while (i < argv.size) {
-        if (argv(i).size == 0 || argv(i)(0) != '-') {
+        if (argv(i).isEmpty || argv(i)(0) != '-') {
           break
         }
         i += 1
         if (i >= argv.size) {
           printUsage()
-          return model
+          return null
         }
         argv(i - 1)(1) match {
           case 's' => param.solverType = SolverType.parse(argv(i).toInt)
           case 'e' => param.eps = argv(i).toDouble
           case 'c' => param.C = argv(i).toDouble
           case 'B' => prob.bias = argv(i).toDouble
-          case _ => {
+          case _ =>
             System.err.println("ERROR: unknown option")
             printUsage()
-            return model
-          }
+            return null
         }
         i += 1
       }
@@ -82,22 +80,21 @@ object SparkLiblinear {
       .setMaster(master)
       .setAppName("SparkLiblinear")
       .setJars(List(jarPath))
-    val sc = new SparkContext(conf)
+    val sc = SparkContext.getOrCreate(conf)
 
-    var param = new Parameter()
-    var prob = new Problem()
+    val param = new Parameter()
+    val prob = new Problem()
     if (args.length > 3) {
-      for (i <- 3 to args.length - 1 by 2) {
+      for (i <- 3 until args.length by 2) {
         if (args(i)(0) == '-') {
           args(i)(1) match {
             case 's' => param.solverType = SolverType.parse(args(i + 1).toInt)
             case 'e' => param.eps = args(i + 1).toDouble
             case 'c' => param.C = args(i + 1).toDouble
             case 'B' => prob.bias = args(i + 1).toDouble
-            case _ => {
+            case _ =>
               System.err.println("ERROR: unknown option")
               System.exit(1)
-            }
           }
         }
       }
@@ -105,24 +102,22 @@ object SparkLiblinear {
 
     val dataPoints = Utils.loadLibSVMData(sc, inputPath)
     prob.setData(dataPoints.cache())
-    var model: Model = train(prob, param)
+    val model: Model = train(prob, param)
 
     sc.stop()
   }
 
   private def train(prob: Problem, param: Parameter): Model = {
-    val labels = prob.dataPoints.mapPartitions(blocks => {
-      blocks.map(p => p.y)
-    }).distinct()
+    val labels = prob.dataPoints.mapPartitions(blocks => blocks.map(p => p.y)).distinct()
 
     val labelSet: Array[Double] = labels.collect()
-    var model: Model = new Model(param, labelSet).setBias(prob.bias)
+    val model: Model = new Model(param, labelSet).setBias(prob.bias)
 
-    if (labelSet.size == 2) {
+    if (labelSet.length == 2) {
       model.w(0) = train_one(prob, param, model.label(0))
     }
     else {
-      for (i <- 0 until labelSet.size) {
+      for (i <- labelSet.indices) {
         model.w(i) = train_one(prob, param, model.label(i))
       }
     }
@@ -136,21 +131,18 @@ object SparkLiblinear {
 
     val pos = binaryProb.dataPoints.map(point => point.y).filter(_ > 0).count()
     val neg = binaryProb.l - pos
-    val primalSolverTol = param.eps * max(min(pos, neg), 1) / binaryProb.l;
+    val primalSolverTol = param.eps * max(min(pos, neg), 1) / binaryProb.l
 
     param.solverType match {
-      case L2_LR => {
+      case L2_LR =>
         var solver = new Tron(new TronLR())
         w = solver.tron(binaryProb, param, primalSolverTol)
-      }
-      case L2_L2LOSS_SVC => {
+      case L2_L2LOSS_SVC =>
         var solver = new Tron(new TronL2SVM())
         w = solver.tron(binaryProb, param, primalSolverTol)
-      }
-      case _ => {
+      case _ =>
         System.err.println("ERROR: unknown solver_type")
         return null
-      }
     }
     binaryProb.dataPoints.unpersist()
     w

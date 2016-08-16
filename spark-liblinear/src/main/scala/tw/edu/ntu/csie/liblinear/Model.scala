@@ -14,8 +14,8 @@ import tw.edu.ntu.csie.liblinear.SolverType._
   * @param bias    the value of user-specified bias
   */
 class Model(val param: Parameter, labelSet: Array[Double]) extends Serializable {
-  val nrClass: Int = label.size
   var label: Array[Double] = labelSet.sortWith(_ < _)
+  val nrClass: Int = label.length
   // weight is a m * f matrix, with row a weight vector for each class
   // m: the number of classes
   // f: the number of features
@@ -65,14 +65,14 @@ class Model(val param: Parameter, labelSet: Array[Double]) extends Serializable 
       probEstimates(1) = 1.0 - probEstimates(0)
     }
     else {
-      var sum = probEstimates.sum
+      val sum = probEstimates.sum
       probEstimates = probEstimates.map(value => value / sum)
     }
     probEstimates
   }
 
   def predictValues(features: Array[Feature]): Array[Double] = {
-    var values = Array.fill(nrClass)(0.0)
+    val values = Array.fill(nrClass)(0.0)
     val lastIndex = w(0).length - 1
     if (nrClass == 2) {
       for (feature <- features) {
@@ -107,8 +107,11 @@ class Model(val param: Parameter, labelSet: Array[Double]) extends Serializable 
   def saveModel(fileName: String) = {
     val fos = new FileOutputStream(fileName)
     val oos = new ObjectOutputStream(fos)
-    oos.writeObject(this)
-    oos.close
+    try {
+      oos.writeObject(this)
+    } finally {
+      oos.close()
+    }
   }
 }
 
@@ -122,9 +125,11 @@ object Model {
   def loadModel(fileName: String): Model = {
     val fis = new FileInputStream(fileName)
     val ois = new ObjectInputStream(fis)
-    val model: Model = ois.readObject.asInstanceOf[Model]
-    ois.close
-    model
+    try {
+      ois.readObject.asInstanceOf[Model]
+    } finally {
+      ois.close()
+    }
   }
 }
 

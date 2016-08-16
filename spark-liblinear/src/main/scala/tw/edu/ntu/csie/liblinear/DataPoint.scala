@@ -1,6 +1,6 @@
 package tw.edu.ntu.csie.liblinear
 
-class Feature(val index: Int, val value: Double) extends Serializable {}
+case class Feature(index: Int, value: Double) {}
 
 /**
   * DataPoint represents a sparse data point with label.
@@ -8,23 +8,13 @@ class Feature(val index: Int, val value: Double) extends Serializable {}
   * @param x features represented in an Array of Feature
   * @param y label
   */
-class DataPoint(val x: Array[Feature], val y: Double) extends Serializable {
+case class DataPoint(x: Array[Feature], y: Double) {
 
-  def getMaxIndex(): Int = {
-    this.x.last.index
-  }
+  def maxIndex: Int = this.x.last.index
 
   def genTrainingPoint(n: Int, b: Double, posLabel: Double): DataPoint = {
-    var x: Array[Feature] = null
-    var y = if (this.y == posLabel) 1.0 else -1.0
-    if (b < 0) {
-      x = this.x
-    }
-    else {
-      x = new Array[Feature](this.x.size + 1)
-      this.x.copyToArray(x, 0)
-      x(x.size - 1) = new Feature(n - 1, b)
-    }
-    new DataPoint(x, y)
+    val x: Array[Feature] = if (b < 0) this.x else this.x :+ Feature(n - 1, b)
+    val y = if (this.y == posLabel) 1.0 else -1.0
+    DataPoint(x, y)
   }
 }

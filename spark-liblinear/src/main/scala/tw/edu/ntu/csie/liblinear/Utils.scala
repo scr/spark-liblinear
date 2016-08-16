@@ -37,9 +37,9 @@ object Utils {
       var x = new Array[Feature](n)
       for (i <- 1 to n) {
         var pair = tokens(i).split(":")
-        x(i - 1) = new Feature(pair(0).toInt - 1, pair(1).toDouble)
+        x(i - 1) = Feature(pair(0).toInt - 1, pair(1).toDouble)
       }
-      new DataPoint(x, y)
+      DataPoint(x, y)
     })
   }
 }

@@ -1,5 +1,9 @@
 package tw.edu.ntu.csie.liblinear
 
+import java.util.NoSuchElementException
+
+import scala.annotation.switch
+
 /**
   * SolverType defines the names of different solvers.
   */
@@ -10,16 +14,10 @@ object SolverType extends Enumeration {
 
   val unknown = Value(-1)
 
-  def parse(id: Int): Value = {
-    if (id == L2_LR.id) {
-      return L2_LR;
-    }
-    else if (id == L2_L2LOSS_SVC.id) {
-      return L2_L2LOSS_SVC
-    }
-    else {
-      return unknown
-    }
+  def parse(id: Int): Solver = try {
+    apply(id)
+  } catch {
+    case _: NoSuchElementException => unknown
   }
 }
 

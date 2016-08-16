@@ -10,7 +10,7 @@ import org.apache.spark.rdd.RDD
   * @param bias       the value of user-specified bias
   */
 class Problem() extends Serializable {
-  var dataPoints: RDD[DataPoint] = null
+  var dataPoints: RDD[DataPoint] = _
   var n: Int = 0
   var l: Long = 0
   var bias: Double = -1.0
@@ -18,7 +18,7 @@ class Problem() extends Serializable {
   def setData(dataPoints: RDD[DataPoint]): this.type = {
     this.dataPoints = dataPoints
     this.l = dataPoints.count()
-    this.n = this.dataPoints.map(p => p.getMaxIndex()).reduce(math.max(_, _)) + 1
+    this.n = this.dataPoints.map(p => p.maxIndex).reduce(math.max) + 1
     if (this.bias >= 0) {
       this.n += 1
     }
@@ -26,7 +26,7 @@ class Problem() extends Serializable {
   }
 
   def genBinaryProb(posLabel: Double): Problem = {
-    var binaryProb = new Problem()
+    val binaryProb = new Problem()
     binaryProb.l = this.l
     binaryProb.n = this.n
     binaryProb.bias = this.bias
